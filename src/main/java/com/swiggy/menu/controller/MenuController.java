@@ -3,6 +3,9 @@ package com.swiggy.menu.controller;
 import com.swiggy.menu.dto.request.CreateRestaurantRequest;
 import com.swiggy.menu.dto.request.MenuItemRequest;
 import com.swiggy.menu.dto.response.MenuItemResponse;
+import com.swiggy.menu.dto.response.PaginatedMenuItemResponse;
+import com.swiggy.menu.dto.response.RestaurantMenuResponse;
+import com.swiggy.menu.dto.response.RestaurantResponse;
 import com.swiggy.menu.entity.Restaurant;
 import com.swiggy.menu.service.MenuService;
 import org.springframework.http.ResponseEntity;
@@ -21,22 +24,17 @@ public class MenuController {
     }
 
     @PostMapping("/restaurant")
-    public ResponseEntity<Restaurant> addRestaurant(@RequestBody CreateRestaurantRequest request) {
+    public ResponseEntity<RestaurantResponse> addRestaurant(@RequestBody CreateRestaurantRequest request) {
         return ResponseEntity.ok(menuService.addRestaurant(request));
     }
 
     @GetMapping("/restaurant/{restaurantId}")
-    public ResponseEntity<Restaurant> getMenu(@PathVariable Long restaurantId) {
-        return ResponseEntity.ok(menuService.getMenu(restaurantId));
+    public ResponseEntity<PaginatedMenuItemResponse> getMenu(@PathVariable Long restaurantId,@RequestParam(defaultValue = "0") int page,@RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(menuService.getMenu(restaurantId, page, size));
     }
 
-    /*@PutMapping("/restaurant/{restaurantId}/menu")
-    public ResponseEntity<Restaurant> updateMenu(@RequestBody Restaurant request) {
-        return ResponseEntity.ok(menuService.updateMenu(request));
-    }*/
-
     @PutMapping("/restaurant/{id}/menu")
-    public ResponseEntity<Restaurant> updateMenu(
+    public ResponseEntity<RestaurantMenuResponse> updateMenu(
             @PathVariable("id") Long restaurantId,
             @RequestBody List<MenuItemRequest> menuItems) {
         return ResponseEntity.ok(menuService.updateMenu(restaurantId, menuItems));
@@ -47,11 +45,6 @@ public class MenuController {
         menuService.deleteRestaurant(restaurantId);
         return ResponseEntity.noContent().build();
     }
-
-    /*@GetMapping("/search")
-    public ResponseEntity<List<MenuItem>> searchMenuItems(@RequestParam String dishname) {
-        return ResponseEntity.ok(menuService.searchMenuItemsByName(dishname));
-    }*/
 
     @GetMapping("/search")
     public ResponseEntity<List<MenuItemResponse>> searchByDishName(@RequestParam String dishname) {

@@ -17,6 +17,17 @@ import java.util.List;
 public class GlobalExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiError> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+        List<String> details = new ArrayList<>();
+        details.add("Request body is not readable: " + ex.getMessage());
+
+        ApiError apiError = buildApiErrorFromValidationError(
+                ValidationError.REQUEST_BODY_NOT_READABLE, details);
+
+        log.error("Message not readable: {}", ex.getMessage(), ex);
+        return new ResponseEntity<>(apiError, HttpStatus.BAD_REQUEST);
+    }
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiError> handleGenericException(Exception ex, WebRequest request) {
