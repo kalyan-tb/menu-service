@@ -73,9 +73,9 @@ public class MenuService {
         }).toList();
 
         // 👇 Do this instead of setMenuItems(...) to avoid Hibernate orphan issues
-        /*existing.getMenuItems().clear();
-        existing.getMenuItems().addAll(updatedItems);*/
-        existing.setMenuItems(updatedItems);
+        existing.getMenuItems().clear();
+        existing.getMenuItems().addAll(updatedItems);
+        //existing.setMenuItems(updatedItems);
         return restaurantRepository.save(existing);
 
         /*Restaurant existing = restaurantRepository.findById(request.getId())
