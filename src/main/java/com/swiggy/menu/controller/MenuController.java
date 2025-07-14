@@ -6,8 +6,8 @@ import com.swiggy.menu.dto.response.MenuItemResponse;
 import com.swiggy.menu.dto.response.PaginatedMenuItemResponse;
 import com.swiggy.menu.dto.response.RestaurantMenuResponse;
 import com.swiggy.menu.dto.response.RestaurantResponse;
-import com.swiggy.menu.entity.Restaurant;
 import com.swiggy.menu.service.MenuService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,19 +24,19 @@ public class MenuController {
     }
 
     @PostMapping("/restaurant")
-    public ResponseEntity<RestaurantResponse> addRestaurant(@RequestBody CreateRestaurantRequest request) {
+    public ResponseEntity<RestaurantResponse> addRestaurant(@Valid @RequestBody CreateRestaurantRequest request) {
         return ResponseEntity.ok(menuService.addRestaurant(request));
     }
 
     @GetMapping("/restaurant/{restaurantId}")
     public ResponseEntity<PaginatedMenuItemResponse> getMenu(@PathVariable Long restaurantId,@RequestParam(defaultValue = "0") int page,@RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(menuService.getMenu(restaurantId, page, size));
+        return ResponseEntity.ok(menuService.getMenuByRestaurantId(restaurantId, page, size));
     }
 
     @PutMapping("/restaurant/{id}/menu")
     public ResponseEntity<RestaurantMenuResponse> updateMenu(
             @PathVariable("id") Long restaurantId,
-            @RequestBody List<MenuItemRequest> menuItems) {
+            @Valid @RequestBody List<MenuItemRequest> menuItems) {
         return ResponseEntity.ok(menuService.updateMenu(restaurantId, menuItems));
     }
 

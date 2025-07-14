@@ -6,8 +6,12 @@ import com.swiggy.menu.dto.response.*;
 import com.swiggy.menu.entity.MenuItem;
 import com.swiggy.menu.entity.Restaurant;
 import com.swiggy.menu.exception.ResourceNotFoundException;
+import com.swiggy.menu.exception.ValidationError;
 import com.swiggy.menu.repository.MenuItemRepository;
 import com.swiggy.menu.repository.RestaurantRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -15,11 +19,14 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 public class MenuService {
+
+    private static final Logger logger = LoggerFactory.getLogger(MenuService.class);
 
     private final RestaurantRepository restaurantRepository;
     private final MenuItemRepository menuItemRepository;
@@ -31,40 +38,56 @@ public class MenuService {
 
     @Transactional
     public RestaurantResponse addRestaurant(CreateRestaurantRequest request) {
-        Restaurant restaurant = new Restaurant();
-        restaurant.setName(request.getName());
-        restaurant.setAddress(request.getAddress());
-        restaurant.setCity(request.getCity());
-        restaurant.setPincode(request.getPincode());
+        try {
+            Restaurant restaurant = new Restaurant();
+            restaurant.setName(request.getName());
+            restaurant.setAddress(request.getAddress());
+            restaurant.setCity(request.getCity());
+            restaurant.setPincode(request.getPincode());
 
-        List<MenuItem> items = request.getMenuItems().stream().map(dto -> {
-            MenuItem item = new MenuItem();
-            item.setDishName(dto.getDishName());
-            item.setPrice(dto.getPrice());
-            item.setAvailability(dto.getAvailability());
-            item.setType(dto.getType());
-            item.setRestaurant(restaurant);
-            return item;
-        }).collect(Collectors.toList());
+            List<MenuItem> items = request.getMenuItems() != null
+                    ? request.getMenuItems().stream().map(dto -> {
+                MenuItem item = new MenuItem();
+                item.setDishName(dto.getDishName());
+                item.setPrice(dto.getPrice());
+                item.setAvailability(dto.getAvailability());
+                item.setType(dto.getType());
+                item.setRestaurant(restaurant);
+                return item;
+            }).collect(Collectors.toList())
+                    : new ArrayList<>();
 
-        restaurant.setMenuItems(items);
-        Restaurant saved = restaurantRepository.save(restaurant);
+            restaurant.setMenuItems(items);
 
+            Restaurant saved;
+            try {
+                saved = restaurantRepository.save(restaurant);
+                logger.info("Restaurant saved successfully: ID={}", saved.getId());
+            } catch (DataAccessException e) {
+                logger.error("Database error saving restaurant: {}", e.getMessage(), e);
+                throw new RuntimeException(ValidationError.DATABASE_ERROR.errorMessage, e);
+            }
 
-        // Manual mapping to response DTO
-        RestaurantResponse response = new RestaurantResponse();
-        response.setId(saved.getId());
-        response.setName(saved.getName());
-        response.setAddress(saved.getAddress());
-        response.setCity(saved.getCity());
-        response.setPincode(saved.getPincode());
+            RestaurantResponse response = new RestaurantResponse();
+            response.setId(saved.getId());
+            response.setName(saved.getName());
+            response.setAddress(saved.getAddress());
+            response.setCity(saved.getCity());
+            response.setPincode(saved.getPincode());
 
-        return response;
+            return response;
+        } catch (Exception e) {
+            logger.error("Unexpected error adding restaurant: {}", e.getMessage(), e);
+            throw new RuntimeException(ValidationError.UNEXPECTED_ERROR.errorMessage, e);
+        }
     }
 
 
     @Transactional(readOnly = true)
-    public PaginatedMenuItemResponse getMenu(Long restaurantId, int page, int size) {
+    public PaginatedMenuItemResponse getMenuByRestaurantId(Long restaurantId, int page, int size) {
+        // first search into local/application cache if found then return else proceed (cache miss)
+        // then search into distributed cache (redis) if found then return else proceed
+        //Final call will be to search in db and update the local and distributed cache for eventual consistency
         Restaurant restaurant = restaurantRepository.findById(restaurantId)
                 .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found"));
 
@@ -94,9 +117,7 @@ public class MenuService {
 
     @Transactional
     public RestaurantMenuResponse updateMenu(Long restaurantId, List<MenuItemRequest> menuItems) {
-        // first search into local cache
-        // then search into distributed cache
-        //then below code to search into db
+
         Restaurant existing = restaurantRepository.findById(restaurantId)
                 .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found"));
         try{
@@ -110,10 +131,12 @@ public class MenuService {
                 return item;
             }).toList();
 
-            // 👇 Do this instead of setMenuItems(...) to avoid Hibernate orphan issues
+            // Initialize menuItems if null to avoid NullPointerException
+            if (existing.getMenuItems() == null) {
+                existing.setMenuItems(new ArrayList<>());
+            }
             existing.getMenuItems().clear();
             existing.getMenuItems().addAll(updatedItems);
-            //existing.setMenuItems(updatedItems);
             Restaurant saved = restaurantRepository.save(existing);
             return toRestaurantMenuResponse(saved);
         } catch (Exception e){
