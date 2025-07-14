@@ -182,6 +182,25 @@ CREATE INDEX idx_menu_restaurant_type ON menu (restaurant_id, type);
 
 ---
 
+## 🛡️ Resilience: Circuit Breaker & Fallback Strategy
+
+| Feature                | Description                                                                                                                     |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| **Circuit Breaker**    | Planned using Resilience4j or Spring Cloud Circuit Breaker to prevent cascading failures and handle transient faults.           |
+| **Fallback Mechanism** | On service failure or timeout, fallback responses will provide default values or cached/stale data to maintain user experience. |
+
+### 🔄 Strategy
+
+* **Timeouts and Retries**: Configured for calls to Redis and MySQL.
+* **Fallback Responses**: For Redis failures → fallback to stale data or in-memory defaults.
+* **Circuit Behavior**:
+
+    * Opens after N consecutive failures
+    * Automatically resets after a cooldown period
+    * Integrated at the service layer for external system resilience
+
+---
+
 ## 💡 Assumptions & Trade-offs
 
 ### ✔️ Assumptions
@@ -207,5 +226,26 @@ CREATE INDEX idx_menu_restaurant_type ON menu (restaurant_id, type);
 | **Planned**  | Prometheus, Grafana, ELK stack for full tracing |
 
 ---
+
+
+## 🛡️ Resilience: Circuit Breaker & Fallback Strategy
+
+| Feature                | Description                                                                                                                     |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| **Circuit Breaker**    | Planned using Resilience4j or Spring Cloud Circuit Breaker to prevent cascading failures and handle transient faults.           |
+| **Fallback Mechanism** | On service failure or timeout, fallback responses will provide default values or cached/stale data to maintain user experience. |
+
+### 🔄 Strategy
+
+* **Timeouts and Retries**: Configured for calls to Redis and MySQL.
+* **Fallback Responses**: For Redis failures → fallback to stale data or in-memory defaults.
+* **Circuit Behavior**:
+
+    * Opens after N consecutive failures
+    * Automatically resets after a cooldown period
+    * Integrated at the service layer for external system resilience
+
+---
+
 
 ✅ *This design document serves as a technical blueprint for developers, testers, and architects working on the Menu microservice.*
