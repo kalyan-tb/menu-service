@@ -4,7 +4,13 @@ spring:
     username: root
     password: root
     driver-class-name: com.mysql.cj.jdbc.Driver
-
+  hikari:
+    connectionTimeout: 30000
+    idleTimeout: 600000
+    maxLifetime: 1800000
+    minimumIdle: 10
+    maximumPoolSize: 10
+    autoCommit: true
   jpa:
     hibernate:
       ddl-auto: update
@@ -12,7 +18,6 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
-
   redis:
     enabled: false
     host: localhost

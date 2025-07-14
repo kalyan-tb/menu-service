@@ -2,14 +2,22 @@ package com.swiggy.menu.entity;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@Entity
 @Data
-@Table(name = "restaurants")
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Entity
+@EntityListeners(AuditingEntityListener.class)
+@Table(name = "restaurant")
 public class Restaurant {
 
     @Id
